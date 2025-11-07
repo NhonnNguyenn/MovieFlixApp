@@ -3,9 +3,11 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
+  let timeout: NodeJS.Timeout | null = null;
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
+    if (timeout) {
+      clearTimeout(timeout);
+    }
     timeout = setTimeout(() => func(...args), wait);
   };
 };
@@ -23,4 +25,15 @@ export const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
   if (text.length <= maxLength) return text;
   return text.substr(0, maxLength) + '...';
+};
+
+// Thêm hàm format số
+export const formatNumber = (num: number): string => {
+  if (!num) return '0';
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+// Thêm hàm kiểm tra null/undefined
+export const isNullOrUndefined = (value: any): boolean => {
+  return value === null || value === undefined;
 };
