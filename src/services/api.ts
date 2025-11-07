@@ -3,10 +3,33 @@ const API_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NjQwMDhmZjgwNmU5NDdmN2E4ZTg3
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 
+// Hàm fetch với timeout
+const fetchWithTimeout = async (url: string, options: any = {}, timeout = 10000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+};
+
 const api = {
   async getPopularMovies() {
     try {
-      const response = await fetch(
+      const data = await fetchWithTimeout(
         `${API_BASE_URL}/movie/popular?language=vi-VN&page=1`,
         {
           headers: {
@@ -15,8 +38,8 @@ const api = {
           },
         }
       );
-      const data = await response.json();
-      return data.results;
+      console.log('Popular movies data:', data.results?.length); // Debug
+      return data.results || [];
     } catch (error) {
       console.error('Error fetching popular movies:', error);
       return [];
@@ -25,7 +48,7 @@ const api = {
 
   async getNowPlayingMovies() {
     try {
-      const response = await fetch(
+      const data = await fetchWithTimeout(
         `${API_BASE_URL}/movie/now_playing?language=vi-VN&page=1`,
         {
           headers: {
@@ -34,8 +57,8 @@ const api = {
           },
         }
       );
-      const data = await response.json();
-      return data.results;
+      console.log('Now playing movies data:', data.results?.length); // Debug
+      return data.results || [];
     } catch (error) {
       console.error('Error fetching now playing movies:', error);
       return [];
@@ -44,23 +67,20 @@ const api = {
 
   async getMovieDetails(movieId: number) {
     try {
-      const [movieResponse, creditsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/movie/${movieId}?language=vi-VN`, {
+      const [movie, credits] = await Promise.all([
+        fetchWithTimeout(`${API_BASE_URL}/movie/${movieId}?language=vi-VN`, {
           headers: {
             'Authorization': `Bearer ${API_TOKEN}`,
             'Accept': 'application/json',
           },
         }),
-        fetch(`${API_BASE_URL}/movie/${movieId}/credits?language=vi-VN`, {
+        fetchWithTimeout(`${API_BASE_URL}/movie/${movieId}/credits?language=vi-VN`, {
           headers: {
             'Authorization': `Bearer ${API_TOKEN}`,
             'Accept': 'application/json',
           },
         }),
       ]);
-
-      const movie = await movieResponse.json();
-      const credits = await creditsResponse.json();
 
       return { movie, credits };
     } catch (error) {
@@ -71,8 +91,8 @@ const api = {
 
   async searchMoviesAndActors(query: string) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/search/multi?query=${encodeURIComponent(query)}&language=vi-VN&page=1`,
+      const data = await fetchWithTimeout(
+        `${API_BASE_URL}/search/multi?query=${encodeURIComponent(query)}&language=vi-VN&page=1&include_adult=false`,
         {
           headers: {
             'Authorization': `Bearer ${API_TOKEN}`,
@@ -80,8 +100,8 @@ const api = {
           },
         }
       );
-      const data = await response.json();
-      return data.results;
+      console.log('Search results:', data.results?.length); // Debug
+      return data.results || [];
     } catch (error) {
       console.error('Error searching:', error);
       return [];

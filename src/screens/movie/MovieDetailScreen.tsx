@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
-import api from '../services/api';
-import { MovieDetails } from '../types/movie';
+import api from '../../services/api';
+import { MovieDetails } from '../../types/movie'; 
 
 type Props = {
   route: RouteProp<{ params: { movieId: number } }, 'params'>;
