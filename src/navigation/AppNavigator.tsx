@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import TabNavigator from './TabNavigator';
 import { COLORS } from '../constants';
+import MovieDetailScreen from '../screens/movie/MovieDetailScreen';
 
 const Stack = createStackNavigator();
 
