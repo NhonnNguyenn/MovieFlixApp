@@ -8,13 +8,19 @@ import TabNavigator from './TabNavigator';
 import { COLORS } from '../constants';
 import MovieDetailScreen from '../screens/movie/MovieDetailScreen';
 
-const Stack = createStackNavigator();
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  MovieDetail: { movieId: number };
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return null; // Hoặc loading component
+    return null;
   }
 
   return (
@@ -28,7 +34,24 @@ export default function AppNavigator() {
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : (
-          <Stack.Screen name="Main" component={TabNavigator} />
+          <>
+            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen 
+              name="MovieDetail" 
+              component={MovieDetailScreen}
+              options={{
+                headerShown: true,
+                headerStyle: {
+                  backgroundColor: COLORS.primary,
+                },
+                headerTintColor: COLORS.white,
+                headerTitleStyle: {
+                  fontWeight: 'bold',
+                },
+                title: 'Chi tiết phim',
+              }}
+            />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
