@@ -1,249 +1,177 @@
-// src/screens/movie/MovieDetailScreen.tsx
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Movie } from '../../types';
-import { COLORS } from '../../constants';
-import movieService from '../../services/movieService';
+// src/screens/MovieDetailScreen.tsx
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { RouteProp } from '@react-navigation/native';
+import api from '../services/api';
+import { MovieDetails } from '../types/movie';
 
-export default function MovieDetailScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { movie } = route.params as { movie: Movie };
+type Props = {
+  route: RouteProp<{ params: { movieId: number } }, 'params'>;
+};
 
-  const handleBack = () => {
-    navigation.goBack();
+export default function MovieDetailScreen({ route }: Props) {
+  const { movieId } = route.params;
+  const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadMovieDetails();
+  }, [movieId]);
+
+  const loadMovieDetails = async () => {
+    setLoading(true);
+    const details = await api.getMovieDetails(movieId);
+    setMovieDetails(details);
+    setLoading(false);
   };
 
-  const handlePlayTrailer = () => {
-    Alert.alert('Trailer', 'Tính năng phát trailer đang được phát triển!');
-  };
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#667eea" />
+      </View>
+    );
+  }
 
-  const handleAddToFavorites = () => {
-    Alert.alert('Yêu thích', 'Đã thêm vào danh sách yêu thích!');
-  };
+  if (!movieDetails) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Không tìm thấy thông tin phim</Text>
+      </View>
+    );
+  }
+
+  const { movie, credits } = movieDetails;
+  const mainCast = credits.cast.slice(0, 10);
 
   return (
-    <View style={styles.container}>
-      {/* Backdrop Image */}
-      <Image
-        source={{ uri: movieService.getImageUrl(movie.backdropPath, 'w780') }}
-        style={styles.backdrop}
-        resizeMode="cover"
-      />
-      
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)', COLORS.background]}
-        style={styles.gradient}
-      />
-
-      {/* Header */}
+    <ScrollView style={styles.container}>
+      {/* Movie Poster and Basic Info */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chi tiết phim</Text>
-        <TouchableOpacity onPress={handleAddToFavorites} style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={24} color={COLORS.text} />
-        </TouchableOpacity>
+        <Image
+          source={{ uri: movie.backdrop_path ? `https://image.tmdb.org/t/p/w500${movie.backdrop_path}` : 'https://via.placeholder.com/500x300' }}
+          style={styles.backdrop}
+        />
+        <View style={styles.posterContainer}>
+          <Image
+            source={{ uri: movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : 'https://via.placeholder.com/300x450' }}
+            style={styles.poster}
+          />
+        </View>
       </View>
 
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Movie Info */}
-        <View style={styles.movieInfo}>
-          <Image
-            source={{ uri: movieService.getImageUrl(movie.posterPath, 'w500') }}
-            style={styles.poster}
-            resizeMode="cover"
-          />
-          
-          <View style={styles.movieDetails}>
-            <Text style={styles.title}>{movie.title}</Text>
-            
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={20} color={COLORS.accent} />
-              <Text style={styles.rating}>{movie.voteAverage?.toFixed(1) || 'N/A'}</Text>
-              <Text style={styles.voteCount}>({movie.voteCount} đánh giá)</Text>
+      {/* Movie Info */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.title}>{movie.title}</Text>
+        <Text style={styles.rating}>⭐ {movie.vote_average?.toFixed(1)}/10 ({movie.vote_count} lượt đánh giá)</Text>
+        <Text style={styles.releaseDate}>📅 {new Date(movie.release_date).toLocaleDateString('vi-VN')}</Text>
+        <Text style={styles.overview}>{movie.overview}</Text>
+      </View>
+
+      {/* Cast */}
+      <View style={styles.castSection}>
+        <Text style={styles.sectionTitle}>Diễn viên</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {mainCast.map(actor => (
+            <View key={actor.id} style={styles.actorCard}>
+              <Image
+                source={{ uri: actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : 'https://via.placeholder.com/100x150' }}
+                style={styles.actorPhoto}
+              />
+              <Text style={styles.actorName} numberOfLines={2}>{actor.name}</Text>
+              <Text style={styles.actorCharacter} numberOfLines={2}>{actor.character}</Text>
             </View>
-
-            <Text style={styles.releaseDate}>
-              {movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : 'N/A'}
-            </Text>
-
-            <TouchableOpacity style={styles.playButton} onPress={handlePlayTrailer}>
-              <Ionicons name="play" size={20} color={COLORS.text} />
-              <Text style={styles.playButtonText}>Xem trailer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Overview */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nội dung</Text>
-          <Text style={styles.overview}>
-            {movie.overview || 'Đang cập nhật nội dung...'}
-          </Text>
-        </View>
-
-        {/* Additional Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin thêm</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Ngôn ngữ:</Text>
-            <Text style={styles.infoValue}>Tiếng Anh</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Trạng thái:</Text>
-            <Text style={styles.infoValue}>Đã phát hành</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Độ nổi tiếng:</Text>
-            <Text style={styles.infoValue}>{movie.voteCount}</Text>
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+          ))}
+        </ScrollView>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    position: 'relative',
+    height: 250,
   },
   backdrop: {
     width: '100%',
-    height: 250,
+    height: '100%',
+  },
+  posterContainer: {
     position: 'absolute',
-    top: 0,
-  },
-  gradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    color: COLORS.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  favoriteButton: {
-    padding: 8,
-  },
-  content: {
-    flex: 1,
-    marginTop: 150,
-  },
-  movieInfo: {
-    flexDirection: 'row',
-    padding: 16,
+    bottom: -50,
+    left: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   poster: {
     width: 120,
     height: 180,
-    borderRadius: 12,
+    borderRadius: 8,
   },
-  movieDetails: {
-    flex: 1,
-    marginLeft: 16,
+  infoContainer: {
+    marginTop: 60,
+    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   rating: {
-    color: COLORS.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 4,
-    marginRight: 8,
-  },
-  voteCount: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
+    fontSize: 16,
+    color: '#f39c12',
+    marginBottom: 5,
   },
   releaseDate: {
-    color: COLORS.textSecondary,
     fontSize: 16,
-    marginBottom: 16,
-  },
-  playButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  playButtonText: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  section: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.secondaryLight,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 12,
+    color: '#666',
+    marginBottom: 15,
   },
   overview: {
-    color: COLORS.textSecondary,
     fontSize: 16,
     lineHeight: 24,
+    color: '#333',
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  castSection: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  actorCard: {
     alignItems: 'center',
-    paddingVertical: 8,
+    marginRight: 15,
+    width: 100,
   },
-  infoLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
+  actorPhoto: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
   },
-  infoValue: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: '500',
+  actorName: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  actorCharacter: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
   },
 });
