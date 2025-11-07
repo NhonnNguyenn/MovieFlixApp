@@ -1,13 +1,8 @@
 // src/utils/helpers.ts
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
-  return (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
+export const debounce = (func: Function, wait: number) => {
+  let timeout: any;
+  return (...args: any[]) => {
+    clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
 };
@@ -15,7 +10,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 export const formatDate = (dateString: string): string => {
   if (!dateString) return 'N/A';
   try {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    return new Date(dateString).getFullYear().toString();
   } catch {
     return 'N/A';
   }
@@ -23,17 +18,19 @@ export const formatDate = (dateString: string): string => {
 
 export const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
-  if (text.length <= maxLength) return text;
-  return text.substr(0, maxLength) + '...';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 };
 
-// Thêm hàm format số
-export const formatNumber = (num: number): string => {
-  if (!num) return '0';
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+// Utility functions for movie data
+export const getSafeRating = (voteAverage: number | undefined): string => {
+  return voteAverage ? voteAverage.toFixed(1) : 'N/A';
 };
 
-// Thêm hàm kiểm tra null/undefined
-export const isNullOrUndefined = (value: any): boolean => {
-  return value === null || value === undefined;
+export const getSafeYear = (releaseDate: string | undefined): string => {
+  if (!releaseDate) return 'N/A';
+  try {
+    return new Date(releaseDate).getFullYear().toString();
+  } catch {
+    return 'N/A';
+  }
 };
