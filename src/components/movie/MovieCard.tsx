@@ -1,5 +1,4 @@
-// src/components/movie/MovieCard.tsx - TOÀN BỘ FILE ĐÃ SỬA
-import React from 'react';
+// src/components/movie/MovieCard.tsx
 import React, { useState } from 'react';
 import { 
   View, 
@@ -21,6 +20,8 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   const getCardSize = () => {
     switch (size) {
       case 'small': return { width: 120, height: 180 };
@@ -56,6 +57,18 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
     return movie.voteAverage ? movie.voteAverage.toFixed(1) : 'N/A';
   };
 
+  const getImageSource = () => {
+    if (imageError || !movie.posterPath) {
+      // Sử dụng placeholder image từ URL
+      return { uri: 'https://via.placeholder.com/500x750/1C1C1C/FFFFFF?text=No+Image' };
+    }
+    return { uri: movieService.getImageUrl(movie.posterPath) };
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <TouchableOpacity 
       style={[styles.container, getCardSize()]} 
@@ -63,16 +76,19 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
       activeOpacity={0.7}
     >
       <Image
-        source={{ uri: movieService.getImageUrl(movie.posterPath) }}
+        source={getImageSource()}
         style={[styles.poster, getCardSize()]}
         resizeMode="cover"
+        onError={handleImageError}
       />
       
-      {/* Rating Badge - ĐÃ SỬA LỖI */}
-      <View style={styles.ratingContainer}>
-        <Ionicons name="star" size={12} color={COLORS.accent} />
-        <Text style={styles.rating}>{getRating()}</Text>
-      </View>
+      {/* Rating Badge */}
+      {movie.voteAverage && movie.voteAverage > 0 && (
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={12} color={COLORS.accent} />
+          <Text style={styles.rating}>{getRating()}</Text>
+        </View>
+      )}
 
       {/* Gradient Overlay */}
       <LinearGradient
@@ -100,6 +116,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginHorizontal: 4,
     backgroundColor: COLORS.card,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   poster: {
     borderRadius: 12,
