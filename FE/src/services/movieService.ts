@@ -1,6 +1,6 @@
 // src/services/movieService.ts - CẬP NHẬT
-import { Movie, ApiResponse } from '../types';
 import { API_CONFIG } from '../constants';
+import { ApiResponse, Movie } from '../types';
 
 class MovieService {
   private apiKey = API_CONFIG.API_KEY;
@@ -20,9 +20,9 @@ class MovieService {
     return await response.json();
   }
 
-  async getPopularMovies(): Promise<Movie[]> {
+  async getPopularMovies(page: number = 1): Promise<Movie[]> {
     try {
-      const data = await this.fetchFromApi<ApiResponse<Movie>>('/movie/popular');
+      const data = await this.fetchFromApi<ApiResponse<Movie>>(`/movie/popular?page=${page}`);
       return data.results || [];
     } catch (error) {
       console.error('Error fetching popular movies:', error);
@@ -30,9 +30,9 @@ class MovieService {
     }
   }
 
-  async getNowPlayingMovies(): Promise<Movie[]> {
+  async getNowPlayingMovies(page: number = 1): Promise<Movie[]> {
     try {
-      const data = await this.fetchFromApi<ApiResponse<Movie>>('/movie/now_playing');
+      const data = await this.fetchFromApi<ApiResponse<Movie>>(`/movie/now_playing?page=${page}`);
       return data.results || [];
     } catch (error) {
       console.error('Error fetching now playing movies:', error);
@@ -40,9 +40,9 @@ class MovieService {
     }
   }
 
-  async getTopRatedMovies(): Promise<Movie[]> {
+  async getTopRatedMovies(page: number = 1): Promise<Movie[]> {
     try {
-      const data = await this.fetchFromApi<ApiResponse<Movie>>('/movie/top_rated');
+      const data = await this.fetchFromApi<ApiResponse<Movie>>(`/movie/top_rated?page=${page}`);
       return data.results || [];
     } catch (error) {
       console.error('Error fetching top rated movies:', error);
@@ -50,9 +50,9 @@ class MovieService {
     }
   }
 
-  async getUpcomingMovies(): Promise<Movie[]> {
+  async getUpcomingMovies(page: number = 1): Promise<Movie[]> {
     try {
-      const data = await this.fetchFromApi<ApiResponse<Movie>>('/movie/upcoming');
+      const data = await this.fetchFromApi<ApiResponse<Movie>>(`/movie/upcoming?page=${page}`);
       return data.results || [];
     } catch (error) {
       console.error('Error fetching upcoming movies:', error);

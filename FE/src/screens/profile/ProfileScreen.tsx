@@ -94,14 +94,14 @@ export default function ProfileScreen() {
       </Animated.View>
 
       <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-      >
+  style={styles.scrollView}
+  showsVerticalScrollIndicator={false}
+  onScroll={(event) => {
+    const { nativeEvent } = event;
+    scrollY.setValue(nativeEvent.contentOffset.y);
+  }}
+  scrollEventThrottle={16}
+>
         
         {/* Profile Header */}
         <LinearGradient

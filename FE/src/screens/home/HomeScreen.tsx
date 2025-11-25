@@ -96,22 +96,22 @@ export default function HomeScreen() {
       </Animated.View>
 
       <ScrollView 
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl 
-            refreshing={loading} 
-            onRefresh={refreshMovies}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-      >
+  style={styles.scrollView}
+  refreshControl={
+    <RefreshControl 
+      refreshing={loading} 
+      onRefresh={refreshMovies}
+      tintColor={COLORS.primary}
+      colors={[COLORS.primary]}
+    />
+  }
+  showsVerticalScrollIndicator={false}
+  onScroll={(event) => {
+    const { nativeEvent } = event;
+    scrollY.setValue(nativeEvent.contentOffset.y);
+  }}
+  scrollEventThrottle={16}
+>
         {/* Hero Section */}
         <LinearGradient
           colors={[COLORS.primary, COLORS.primaryDark]}
@@ -145,13 +145,10 @@ export default function HomeScreen() {
         {/* Featured Section */}
         {popularMovies.length > 0 && (
           <View style={styles.featuredSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🔥 Phổ biến</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
-            </View>
             <MovieList
+              title="🔥 Phổ biến"
+              showAllButton={true}
+              onShowAllPress={() => navigation.navigate('MovieCategoryList', { category: 'popular' })}
               movies={popularMovies.slice(0, 10)}
               loading={loading}
               onMoviePress={handleMoviePress}
@@ -162,13 +159,10 @@ export default function HomeScreen() {
         {/* Now Playing */}
         {nowPlayingMovies.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🎭 Đang chiếu</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
-            </View>
             <MovieList
+              title="🎭 Đang chiếu"
+              showAllButton={true}
+              onShowAllPress={() => navigation.navigate('MovieCategoryList', { category: 'nowPlaying' })}
               movies={nowPlayingMovies.slice(0, 10)}
               loading={loading}
               onMoviePress={handleMoviePress}
@@ -179,13 +173,10 @@ export default function HomeScreen() {
         {/* Top Rated */}
         {topRatedMovies.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>⭐ Đánh giá cao</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
-            </View>
             <MovieList
+              title="⭐ Đánh giá cao"
+              showAllButton={true}
+              onShowAllPress={() => navigation.navigate('MovieCategoryList', { category: 'topRated' })}
               movies={topRatedMovies.slice(0, 10)}
               loading={loading}
               onMoviePress={handleMoviePress}
@@ -196,13 +187,10 @@ export default function HomeScreen() {
         {/* Upcoming */}
         {upcomingMovies.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>📅 Sắp chiếu</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
-            </View>
             <MovieList
+              title="📅 Sắp chiếu"
+              showAllButton={true}
+              onShowAllPress={() => navigation.navigate('MovieCategoryList', { category: 'upcoming' })}
               movies={upcomingMovies.slice(0, 10)}
               loading={loading}
               onMoviePress={handleMoviePress}
