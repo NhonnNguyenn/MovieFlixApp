@@ -4,7 +4,7 @@ const API_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NjQwMDhmZjgwNmU5NDdmN2E4ZTg3
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 
 // Hàm fetch với timeout
-const fetchWithTimeout = async (url: string, options: any = {}, timeout = 10000) => {
+const fetchWithTimeout = async (url: string, options: any = {}, timeout = 15000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   
@@ -99,9 +99,29 @@ const api = {
     }
   },
 
+  async getMovieVideos(movieId: number) {
+    try {
+      const data = await fetchWithTimeout(
+        `${API_BASE_URL}/movie/${movieId}/videos?language=vi-VN`,
+        {
+          headers: {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+      return data.results || [];
+    } catch (error) {
+      console.error('Error fetching movie videos:', error);
+      return [];
+    }
+  },
+
   async getMovieDetails(movieId: number) {
     try {
-      const [movie, credits] = await Promise.all([
+      console.log('🔄 Fetching details for movie:', movieId);
+      
+      const [movieResponse, creditsResponse, videosResponse] = await Promise.all([
         fetchWithTimeout(`${API_BASE_URL}/movie/${movieId}?language=vi-VN`, {
           headers: {
             'Authorization': `Bearer ${API_TOKEN}`,
@@ -114,11 +134,27 @@ const api = {
             'Accept': 'application/json',
           },
         }),
+        fetchWithTimeout(`${API_BASE_URL}/movie/${movieId}/videos?language=vi-VN`, {
+          headers: {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            'Accept': 'application/json',
+          },
+        })
       ]);
 
-      return { movie, credits };
+      console.log('✅ Movie details fetched:', { 
+        title: movieResponse.title, 
+        castCount: creditsResponse.cast?.length || 0,
+        videoCount: videosResponse.results?.length || 0 
+      });
+
+      return {
+        movie: movieResponse,
+        credits: creditsResponse,
+        videos: videosResponse.results || []
+      };
     } catch (error) {
-      console.error('Error fetching movie details:', error);
+      console.error('❌ Error fetching movie details:', error);
       return null;
     }
   },
@@ -142,5 +178,4 @@ const api = {
   },
 };
 
-// Thêm default export
 export default api;

@@ -1,4 +1,4 @@
-// src/screens/auth/RegisterScreen.tsx
+// src/screens/auth/RegisterScreen.tsx - CẬP NHẬT
 import React, { useState } from 'react';
 import { 
   View, 
@@ -10,11 +10,12 @@ import {
   Platform,
   Alert
 } from 'react-native';
-import { Input, Button } from 'react-native-elements';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS } from '../../constants';
+import { COLORS, SIZES, FONTS } from '../../constants';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -52,7 +53,7 @@ export default function RegisterScreen({ navigation }: any) {
 
   return (
     <LinearGradient
-      colors={[COLORS.secondary, COLORS.primary]}
+      colors={COLORS.gradientDark}
       style={styles.container}
     >
       <KeyboardAvoidingView 
@@ -64,74 +65,95 @@ export default function RegisterScreen({ navigation }: any) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
+            
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>Đăng ký</Text>
-              <Text style={styles.subtitle}>Tạo tài khoản mới</Text>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+              <Text style={styles.title}>Tạo tài khoản</Text>
+              <Text style={styles.subtitle}>Đăng ký để bắt đầu trải nghiệm</Text>
             </View>
 
-            {/* Form */}
-            <View style={styles.form}>
+            {/* Form Section */}
+            <View style={styles.formSection}>
               <Input
-                placeholder="Email"
-                placeholderTextColor={COLORS.textMuted}
+                label="Email"
+                placeholder="Nhập email của bạn"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
-                inputStyle={styles.input}
-                containerStyle={styles.inputContainer}
-                leftIcon={
-                  <Ionicons name="mail-outline" size={20} color={COLORS.textMuted} />
-                }
+                leftIcon={<Ionicons name="mail-outline" size={20} color={COLORS.textMuted} />}
               />
               
               <Input
-                placeholder="Tên người dùng"
-                placeholderTextColor={COLORS.textMuted}
+                label="Tên người dùng"
+                placeholder="Chọn tên người dùng"
                 value={username}
                 onChangeText={setUsername}
-                inputStyle={styles.input}
-                containerStyle={styles.inputContainer}
-                leftIcon={
-                  <Ionicons name="person-outline" size={20} color={COLORS.textMuted} />
-                }
+                leftIcon={<Ionicons name="person-outline" size={20} color={COLORS.textMuted} />}
               />
               
               <Input
-                placeholder="Mật khẩu"
-                placeholderTextColor={COLORS.textMuted}
+                label="Mật khẩu"
+                placeholder="Tạo mật khẩu mới"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                inputStyle={styles.input}
-                containerStyle={styles.inputContainer}
-                leftIcon={
-                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.textMuted} />
-                }
+                leftIcon={<Ionicons name="lock-closed-outline" size={20} color={COLORS.textMuted} />}
               />
               
               <Input
-                placeholder="Xác nhận mật khẩu"
-                placeholderTextColor={COLORS.textMuted}
+                label="Xác nhận mật khẩu"
+                placeholder="Nhập lại mật khẩu"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
-                inputStyle={styles.input}
-                containerStyle={styles.inputContainer}
-                leftIcon={
-                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.textMuted} />
-                }
+                leftIcon={<Ionicons name="lock-closed-outline" size={20} color={COLORS.textMuted} />}
               />
+
+              {/* Password Requirements */}
+              <View style={styles.requirements}>
+                <Text style={styles.requirementsTitle}>Yêu cầu mật khẩu:</Text>
+                <View style={styles.requirementItem}>
+                  <Ionicons 
+                    name={password.length >= 6 ? "checkmark-circle" : "ellipse-outline"} 
+                    size={16} 
+                    color={password.length >= 6 ? COLORS.success : COLORS.textMuted} 
+                  />
+                  <Text style={[
+                    styles.requirementText,
+                    password.length >= 6 && styles.requirementMet
+                  ]}>
+                    Ít nhất 6 ký tự
+                  </Text>
+                </View>
+                <View style={styles.requirementItem}>
+                  <Ionicons 
+                    name={password === confirmPassword && password ? "checkmark-circle" : "ellipse-outline"} 
+                    size={16} 
+                    color={password === confirmPassword && password ? COLORS.success : COLORS.textMuted} 
+                  />
+                  <Text style={[
+                    styles.requirementText,
+                    password === confirmPassword && password && styles.requirementMet
+                  ]}>
+                    Mật khẩu khớp
+                  </Text>
+                </View>
+              </View>
               
               <Button
                 title="Đăng ký"
                 onPress={handleRegister}
                 loading={isLoading}
                 disabled={isLoading}
-                buttonStyle={styles.button}
-                titleStyle={styles.buttonText}
-                containerStyle={styles.buttonContainer}
+                size="large"
+                style={styles.registerButton}
               />
             </View>
 
@@ -163,67 +185,74 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 24,
+    padding: SIZES.padding,
+    paddingTop: SIZES.padding * 2,
   },
   header: {
+    marginBottom: SIZES.padding * 2,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.secondaryLight,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: SIZES.padding,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
+    ...FONTS.h1,
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: SIZES.base,
   },
   subtitle: {
-    fontSize: 16,
+    ...FONTS.body2,
     color: COLORS.textSecondary,
-    textAlign: 'center',
   },
-  form: {
-    marginBottom: 32,
+  formSection: {
+    marginBottom: SIZES.padding,
   },
-  inputContainer: {
-    marginBottom: 20,
+  requirements: {
+    backgroundColor: COLORS.secondaryLight,
+    padding: SIZES.padding,
+    borderRadius: SIZES.radius,
+    marginBottom: SIZES.padding,
   },
-  input: {
+  requirementsTitle: {
+    ...FONTS.body3,
     color: COLORS.text,
-    fontSize: 16,
-    paddingHorizontal: 12,
+    fontWeight: '600',
+    marginBottom: SIZES.base,
   },
-  buttonContainer: {
-    marginTop: 16,
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SIZES.base / 2,
   },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    height: 56,
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  requirementText: {
+    ...FONTS.body4,
+    color: COLORS.textMuted,
+    marginLeft: SIZES.base,
   },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  requirementMet: {
+    color: COLORS.success,
+  },
+  registerButton: {
+    marginTop: SIZES.base,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: SIZES.padding,
   },
   footerText: {
+    ...FONTS.body2,
     color: COLORS.textSecondary,
-    fontSize: 16,
   },
   loginLink: {
-    color: COLORS.accent,
-    fontSize: 16,
-    fontWeight: 'bold',
+    ...FONTS.body2,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });

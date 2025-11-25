@@ -1,15 +1,23 @@
 // src/context/AuthContext.tsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User } from '../types';
-import authService from '../services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { backendAPI } from '../services/backendAPI';
+
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  token: string;
+  avatar?: string;
+}
 
 interface AuthContextType {
   user: User | null;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, username: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
   loading: boolean;
-  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,26 +26,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isAuthenticated = !!user;
+
   useEffect(() => {
-    checkAuthStatus();
+    console.log('🔄 AuthProvider mounted, checking stored auth...');
+    checkStoredAuth();
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkStoredAuth = async () => {
     try {
-      const userData = await authService.getCurrentUser();
-      setUser(userData);
+      const storedToken = await AsyncStorage.getItem('userToken');
+      console.log('🔍 Stored token found:', !!storedToken);
+      
+      if (storedToken) {
+        console.log('📋 Calling getProfile with stored token...');
+        const response = await backendAPI.getProfile(storedToken);
+        
+        if (response.success && response.data) {
+          console.log('✅ Profile loaded successfully:', response.data.username);
+          setUser({ 
+            ...response.data, 
+            token: storedToken 
+          });
+        } else {
+          console.log('❌ Profile load failed:', response.message);
+          await AsyncStorage.removeItem('userToken');
+        }
+      } else {
+        console.log('🔍 No stored token found');
+      }
     } catch (error) {
-      console.log('No user logged in');
+      console.error('🚨 Auth check error:', error);
+      await AsyncStorage.removeItem('userToken');
     } finally {
       setLoading(false);
+      console.log('🏁 Auth check completed, authenticated:', isAuthenticated);
     }
   };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const userData = await authService.login(email, password);
-      setUser(userData);
+      console.log('🔐 Starting login for:', email);
+      const response = await backendAPI.login(email, password);
+
+      if (response.success && response.data) {
+        console.log('✅ Login successful, user:', response.data.username);
+        
+        // Lưu token
+        await AsyncStorage.setItem('userToken', response.data.token);
+        console.log('💾 Token saved to storage');
+        
+        // Cập nhật state user
+        setUser(response.data);
+        console.log('👤 User state updated');
+      } else {
+        console.log('❌ Login failed:', response.message);
+        throw new Error(response.message || 'Đăng nhập thất bại');
+      }
+    } catch (error: any) {
+      console.log('🚨 Login process error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -46,34 +95,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, username: string) => {
     setLoading(true);
     try {
-      const userData = await authService.register(email, password, username);
-      setUser(userData);
+      console.log('📝 Starting registration for:', email);
+      const response = await backendAPI.register(email, password, username);
+
+      if (response.success && response.data) {
+        console.log('✅ Registration successful, user:', response.data.username);
+        
+        await AsyncStorage.setItem('userToken', response.data.token);
+        setUser(response.data);
+      } else {
+        console.log('❌ Registration failed:', response.message);
+        throw new Error(response.message || 'Đăng ký thất bại');
+      }
+    } catch (error: any) {
+      console.log('🚨 Registration process error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    setLoading(true);
-    try {
-      await authService.logout();
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    login,
-    register,
-    logout,
-    loading,
-    isAuthenticated: !!user,
+    console.log('🚪 Logging out user:', user?.username);
+    setUser(null);
+    await AsyncStorage.removeItem('userToken');
+    console.log('✅ Logout completed');
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated,
+      login, 
+      register, 
+      logout, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

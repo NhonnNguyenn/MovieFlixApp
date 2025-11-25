@@ -1,23 +1,25 @@
-// src/screens/movie/SearchScreen.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  FlatList
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+// src/screens/movie/SearchScreen.tsx - CẬP NHẬT
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
-import { COLORS } from '../../constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import MovieCard from '../../components/movie/MovieCard';
+import { COLORS, FONTS, SHADOWS, SIZES } from '../../constants';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import api from '../../services/api';
 
 type SearchScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -30,26 +32,34 @@ export default function SearchScreen() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<'all' | 'movies' | 'actors'>('all');
   
-  // SỬA: Khởi tạo useRef với null
+  const searchInputRef = useRef<TextInput>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Tìm kiếm tự động sau khi ngừng gõ 500ms
   useEffect(() => {
-    if (searchQuery.trim().length > 2) { // Chỉ tìm kiếm khi có ít nhất 3 ký tự
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Tìm kiếm tự động
+  useEffect(() => {
+    if (searchQuery.trim().length > 2) {
       setSuggestionsLoading(true);
       setShowSuggestions(true);
       
-      // Clear timeout cũ
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
       
-      // Set timeout mới
       searchTimeoutRef.current = setTimeout(async () => {
         try {
           const results = await api.searchMoviesAndActors(searchQuery);
-          const movies = results.filter((item: { media_type: string }) => item.media_type === 'movie').slice(0, 5); // Giới hạn 5 phim
+          const movies = results.filter((item: any) => item.media_type === 'movie').slice(0, 5);
           setSearchSuggestions(movies);
         } catch (error) {
           console.error('Suggestions error:', error);
@@ -57,7 +67,7 @@ export default function SearchScreen() {
         } finally {
           setSuggestionsLoading(false);
         }
-      }, 500) as unknown as NodeJS.Timeout; // 500ms delay
+      }, 500) as unknown as NodeJS.Timeout;
     } else {
       setSearchSuggestions([]);
       setShowSuggestions(false);
@@ -85,7 +95,6 @@ export default function SearchScreen() {
     setShowSuggestions(false);
     try {
       const results = await api.searchMoviesAndActors(query);
-      console.log('🔍 Search results:', results);
       setSearchResults(results || []);
     } catch (error) {
       console.error('Search error:', error);
@@ -96,15 +105,32 @@ export default function SearchScreen() {
   };
 
   const handleSuggestionPress = (movie: any) => {
-    console.log('🎬 Navigating to movie from suggestion:', movie.id);
     setSearchQuery(movie.title || movie.name);
     setShowSuggestions(false);
     navigation.navigate('MovieDetail', { movieId: movie.id });
   };
 
   const handleMoviePress = (movie: any) => {
-    console.log('🎬 Navigating to movie from search:', movie.id);
     navigation.navigate('MovieDetail', { movieId: movie.id });
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchSuggestions([]);
+    setHasSearched(false);
+    setShowSuggestions(false);
+    setActiveCategory('all');
+    searchInputRef.current?.focus();
+  };
+
+  const getFilteredResults = () => {
+    if (activeCategory === 'movies') {
+      return searchResults.filter(item => item.media_type === 'movie');
+    } else if (activeCategory === 'actors') {
+      return searchResults.filter(item => item.media_type === 'person');
+    }
+    return searchResults;
   };
 
   const renderSuggestionItem = ({ item }: { item: any }) => {
@@ -138,39 +164,13 @@ export default function SearchScreen() {
     );
   };
 
-  const renderMovieCard = (movie: any) => {
-    const posterUrl = movie.poster_path 
-      ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
-      : 'https://via.placeholder.com/200x300/333/666?text=No+Poster';
-    
-    const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
-    const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
-
-    return (
-      <TouchableOpacity 
-        key={movie.id} 
-        style={styles.movieCard}
-        onPress={() => handleMoviePress(movie)}
-      >
-        <Image
-          source={{ uri: posterUrl }}
-          style={styles.moviePoster}
-          resizeMode="cover"
-        />
-        <View style={styles.movieInfo}>
-          <Text style={styles.movieTitle} numberOfLines={2}>
-            {movie.title || movie.name}
-          </Text>
-          <Text style={styles.movieRating}>
-            ⭐ {rating}/10
-          </Text>
-          <Text style={styles.movieYear}>
-            {year}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderMovieItem = ({ item, index }: { item: any; index: number }) => (
+    <MovieCard
+      movie={item}
+      onPress={handleMoviePress}
+      size={index === 0 ? 'large' : 'medium'}
+    />
+  );
 
   const renderActorCard = (actor: any) => {
     const profileUrl = actor.profile_path 
@@ -178,7 +178,7 @@ export default function SearchScreen() {
       : 'https://via.placeholder.com/200x300/333/666?text=No+Photo';
     
     return (
-      <View key={actor.id} style={styles.actorCard}>
+      <TouchableOpacity key={actor.id} style={styles.actorCard}>
         <Image
           source={{ uri: profileUrl }}
           style={styles.actorPhoto}
@@ -190,128 +190,184 @@ export default function SearchScreen() {
             {actor.known_for_department}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
-  const clearSearch = () => {
-    setSearchQuery('');
-    setSearchResults([]);
-    setSearchSuggestions([]);
-    setHasSearched(false);
-    setShowSuggestions(false);
-  };
+  const categories = [
+    { key: 'all', label: 'Tất cả', count: searchResults.length },
+    { key: 'movies', label: 'Phim', count: searchResults.filter(item => item.media_type === 'movie').length },
+    { key: 'actors', label: 'Diễn viên', count: searchResults.filter(item => item.media_type === 'person').length },
+  ];
 
   return (
-    <LinearGradient colors={[COLORS.secondary, COLORS.background]} style={styles.container}>
-      {/* Search Header */}
-      <View style={styles.searchHeader}>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={COLORS.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm phim, diễn viên..."
-            placeholderTextColor={COLORS.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-            onFocus={() => searchQuery.length > 2 && setShowSuggestions(true)}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch}>
-              <Ionicons name="close-circle" size={20} color={COLORS.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchButtonText}>Tìm</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Suggestions */}
-      {showSuggestions && searchQuery.length > 2 && (
-        <View style={styles.suggestionsContainer}>
-          {suggestionsLoading ? (
-            <View style={styles.suggestionsLoading}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.suggestionsLoadingText}>Đang tìm kiếm...</Text>
-            </View>
-          ) : searchSuggestions.length > 0 ? (
-            <FlatList
-              data={searchSuggestions}
-              renderItem={renderSuggestionItem}
-              keyExtractor={(item) => item.id.toString()}
-              style={styles.suggestionsList}
-              keyboardShouldPersistTaps="handled"
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <LinearGradient colors={COLORS.gradientDark} style={styles.container}>
+        
+        {/* Search Header */}
+        <View style={styles.searchHeader}>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={COLORS.textMuted} style={styles.searchIcon} />
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Tìm kiếm phim, diễn viên..."
+              placeholderTextColor={COLORS.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+              onFocus={() => searchQuery.length > 2 && setShowSuggestions(true)}
             />
-          ) : (
-            <View style={styles.noSuggestions}>
-              <Text style={styles.noSuggestionsText}>Không tìm thấy gợi ý</Text>
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <Ionicons name="close-circle" size={20} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Ionicons name="search" size={20} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Suggestions */}
+        {showSuggestions && searchQuery.length > 2 && (
+          <View style={styles.suggestionsContainer}>
+            {suggestionsLoading ? (
+              <View style={styles.suggestionsLoading}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.suggestionsLoadingText}>Đang tìm kiếm...</Text>
+              </View>
+            ) : searchSuggestions.length > 0 ? (
+              <FlatList
+                data={searchSuggestions}
+                renderItem={renderSuggestionItem}
+                keyExtractor={(item) => item.id.toString()}
+                style={styles.suggestionsList}
+                keyboardShouldPersistTaps="handled"
+              />
+            ) : (
+              <View style={styles.noSuggestions}>
+                <Text style={styles.noSuggestionsText}>Không tìm thấy gợi ý</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Category Filters */}
+          {hasSearched && searchResults.length > 0 && (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesScroll}
+              contentContainerStyle={styles.categoriesContent}
+            >
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.key}
+                  style={[
+                    styles.categoryButton,
+                    activeCategory === category.key && styles.categoryButtonActive
+                  ]}
+                  onPress={() => setActiveCategory(category.key as any)}
+                >
+                  <Text style={[
+                    styles.categoryText,
+                    activeCategory === category.key && styles.categoryTextActive
+                  ]}>
+                    {category.label} ({category.count})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={styles.loadingText}>Đang tìm kiếm...</Text>
             </View>
           )}
-        </View>
-      )}
 
-      <ScrollView 
-        style={styles.content} 
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Đang tìm kiếm...</Text>
-          </View>
-        )}
+          {!loading && hasSearched && getFilteredResults().length === 0 && (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={64} color={COLORS.textMuted} />
+              <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
+              <Text style={styles.emptyText}>Thử với từ khóa khác hoặc kiểm tra chính tả</Text>
+            </View>
+          )}
 
-        {!loading && hasSearched && searchResults.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="search-outline" size={64} color={COLORS.textMuted} />
-            <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
-            <Text style={styles.emptyText}>Thử với từ khóa khác</Text>
-          </View>
-        )}
+          {!loading && getFilteredResults().length > 0 && (
+            <View style={styles.resultsContainer}>
+              {/* Movies Grid */}
+              {(activeCategory === 'all' || activeCategory === 'movies') && 
+               getFilteredResults().filter((item: any) => item.media_type === 'movie').length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>
+                    Phim ({getFilteredResults().filter((item: any) => item.media_type === 'movie').length})
+                  </Text>
+                  <FlatList
+                    data={getFilteredResults().filter((item: any) => item.media_type === 'movie')}
+                    renderItem={renderMovieItem}
+                    keyExtractor={(item) => item.id.toString()}
+                    numColumns={2}
+                    columnWrapperStyle={styles.moviesGrid}
+                    scrollEnabled={false}
+                    showsVerticalScrollIndicator={false}
+                  />
+                </View>
+              )}
 
-        {!loading && searchResults.length > 0 && (
-          <View style={styles.resultsContainer}>
-            {/* Movies */}
-            {searchResults.filter(item => item.media_type === 'movie').length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Phim ({searchResults.filter(item => item.media_type === 'movie').length})</Text>
-                <View style={styles.moviesGrid}>
-                  {searchResults
-                    .filter(item => item.media_type === 'movie')
-                    .map(renderMovieCard)}
+              {/* Actors */}
+              {(activeCategory === 'all' || activeCategory === 'actors') && 
+               getFilteredResults().filter((item: any) => item.media_type === 'person').length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>
+                    Diễn viên ({getFilteredResults().filter((item: any) => item.media_type === 'person').length})
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.actorsScroll}>
+                    {getFilteredResults()
+                      .filter((item: any) => item.media_type === 'person')
+                      .map(renderActorCard)}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+
+          {!hasSearched && !showSuggestions && (
+            <View style={styles.placeholderContainer}>
+              <Ionicons name="film-outline" size={80} color={COLORS.textMuted} style={styles.placeholderIcon} />
+              <Text style={styles.placeholderTitle}>Tìm kiếm phim yêu thích</Text>
+              <Text style={styles.placeholderText}>
+                Nhập tên phim, diễn viên hoặc đạo diễn để bắt đầu tìm kiếm
+              </Text>
+              
+              {/* Popular Searches */}
+              <View style={styles.popularSearches}>
+                <Text style={styles.popularSearchesTitle}>Tìm kiếm phổ biến:</Text>
+                <View style={styles.popularTags}>
+                  {['Avengers', 'Marvel', 'Disney', 'Action', 'Comedy'].map((tag) => (
+                    <TouchableOpacity 
+                      key={tag} 
+                      style={styles.popularTag}
+                      onPress={() => setSearchQuery(tag)}
+                    >
+                      <Text style={styles.popularTagText}>{tag}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
-            )}
-
-            {/* Actors */}
-            {searchResults.filter(item => item.media_type === 'person').length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Diễn viên ({searchResults.filter(item => item.media_type === 'person').length})</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.actorsScroll}>
-                  {searchResults
-                    .filter(item => item.media_type === 'person')
-                    .map(renderActorCard)}
-                </ScrollView>
-              </View>
-            )}
-          </View>
-        )}
-
-        {!hasSearched && !showSuggestions && (
-          <View style={styles.placeholderContainer}>
-            <Ionicons name="film-outline" size={64} color={COLORS.textMuted} />
-            <Text style={styles.placeholderTitle}>Tìm kiếm phim yêu thích</Text>
-            <Text style={styles.placeholderText}>
-              Nhập tên phim, diễn viên hoặc đạo diễn để bắt đầu tìm kiếm
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-    </LinearGradient>
+            </View>
+          )}
+        </ScrollView>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -322,46 +378,51 @@ const styles = StyleSheet.create({
   searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 60,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: SIZES.padding,
+    paddingTop: SIZES.padding * 2,
+    backgroundColor: COLORS.secondaryLight,
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginRight: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    paddingHorizontal: SIZES.padding,
+    marginRight: SIZES.base,
+    borderWidth: 1,
+    borderColor: COLORS.textMuted,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: SIZES.base,
   },
   searchInput: {
     flex: 1,
-    height: 40,
+    height: 50,
+    ...FONTS.body1,
     color: COLORS.text,
-    fontSize: 16,
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: SIZES.base / 2,
   },
   searchButton: {
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+    width: 50,
+    height: 50,
+    borderRadius: SIZES.radius,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.medium,
   },
-  searchButtonText: {
-    color: COLORS.text,
-    fontWeight: '600',
-  },
-  // Styles cho search suggestions
   suggestionsContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginHorizontal: 16,
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    marginHorizontal: SIZES.padding,
+    borderRadius: SIZES.radius,
     maxHeight: 300,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: COLORS.textMuted,
+    ...SHADOWS.medium,
   },
   suggestionsList: {
     flex: 1,
@@ -369,136 +430,125 @@ const styles = StyleSheet.create({
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: SIZES.padding,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: COLORS.textMuted,
   },
   suggestionPoster: {
     width: 40,
     height: 60,
     borderRadius: 4,
-    marginRight: 12,
+    marginRight: SIZES.padding,
     backgroundColor: COLORS.textMuted,
   },
   suggestionInfo: {
     flex: 1,
   },
   suggestionTitle: {
-    fontSize: 14,
+    ...FONTS.body2,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   suggestionDetails: {
-    fontSize: 12,
+    ...FONTS.body4,
     color: COLORS.textSecondary,
   },
   suggestionsLoading: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: SIZES.padding,
   },
   suggestionsLoadingText: {
-    marginLeft: 8,
+    ...FONTS.body2,
     color: COLORS.textSecondary,
-    fontSize: 14,
+    marginLeft: SIZES.base,
   },
   noSuggestions: {
-    padding: 16,
+    padding: SIZES.padding,
     alignItems: 'center',
   },
   noSuggestionsText: {
+    ...FONTS.body2,
     color: COLORS.textSecondary,
-    fontSize: 14,
   },
   content: {
     flex: 1,
   },
+  categoriesScroll: {
+    marginVertical: SIZES.padding,
+  },
+  categoriesContent: {
+    paddingHorizontal: SIZES.padding,
+  },
+  categoryButton: {
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    marginRight: SIZES.base,
+    borderWidth: 1,
+    borderColor: COLORS.textMuted,
+  },
+  categoryButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryText: {
+    ...FONTS.body3,
+    color: COLORS.text,
+  },
+  categoryTextActive: {
+    color: COLORS.text,
+    fontWeight: '600',
+  },
   loadingContainer: {
     alignItems: 'center',
-    padding: 40,
+    padding: SIZES.padding * 2,
   },
   loadingText: {
-    marginTop: 12,
+    ...FONTS.body2,
     color: COLORS.textSecondary,
-    fontSize: 16,
+    marginTop: SIZES.base,
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 40,
+    padding: SIZES.padding * 3,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...FONTS.h3,
     color: COLORS.text,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: SIZES.padding,
+    marginBottom: SIZES.base,
   },
   emptyText: {
+    ...FONTS.body2,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
   resultsContainer: {
-    padding: 16,
+    padding: SIZES.padding,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: SIZES.padding * 2,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    ...FONTS.h3,
     color: COLORS.text,
-    marginBottom: 16,
-    marginLeft: 8,
+    marginBottom: SIZES.padding,
+    marginLeft: SIZES.base,
+    fontWeight: 'bold',
   },
   moviesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-  },
-  movieCard: {
-    width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  moviePoster: {
-    width: '100%',
-    height: 200,
-    backgroundColor: COLORS.textMuted,
-  },
-  movieInfo: {
-    padding: 12,
-  },
-  movieTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 8,
-    height: 40,
-  },
-  movieRating: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  movieYear: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    marginBottom: SIZES.base,
   },
   actorsScroll: {
-    paddingLeft: 8,
+    paddingLeft: SIZES.base,
   },
   actorCard: {
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: SIZES.padding,
     width: 100,
   },
   actorPhoto: {
@@ -506,38 +556,69 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: COLORS.textMuted,
-    marginBottom: 8,
+    marginBottom: SIZES.base,
+    ...SHADOWS.medium,
   },
   actorInfo: {
     alignItems: 'center',
   },
   actorName: {
-    fontSize: 12,
+    ...FONTS.body3,
     fontWeight: 'bold',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   actorKnownFor: {
-    fontSize: 11,
+    ...FONTS.body4,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
   placeholderContainer: {
     alignItems: 'center',
-    padding: 40,
-    marginTop: 60,
+    padding: SIZES.padding * 3,
+    marginTop: SIZES.padding * 2,
+  },
+  placeholderIcon: {
+    marginBottom: SIZES.padding,
+    opacity: 0.5,
   },
   placeholderTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...FONTS.h3,
     color: COLORS.text,
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: SIZES.base,
+    textAlign: 'center',
   },
   placeholderText: {
+    ...FONTS.body2,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    fontSize: 14,
+    marginBottom: SIZES.padding * 2,
+  },
+  popularSearches: {
+    alignItems: 'center',
+  },
+  popularSearchesTitle: {
+    ...FONTS.body2,
+    color: COLORS.text,
+    marginBottom: SIZES.padding,
+  },
+  popularTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  popularTag: {
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
+    borderRadius: 20,
+    margin: SIZES.base / 2,
+    borderWidth: 1,
+    borderColor: COLORS.textMuted,
+  },
+  popularTagText: {
+    ...FONTS.body3,
+    color: COLORS.text,
   },
 });

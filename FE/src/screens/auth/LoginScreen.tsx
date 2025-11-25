@@ -1,20 +1,21 @@
-// src/screens/auth/LoginScreen.tsx
+// src/screens/auth/LoginScreen.tsx - CẬP NHẬT
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView,
+import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  Alert
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Input, Button } from 'react-native-elements';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import { COLORS, FONTS, SIZES } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS } from '../../constants';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -40,7 +41,7 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <LinearGradient
-      colors={[COLORS.secondary, COLORS.primary]}
+      colors={COLORS.gradientDark}
       style={styles.container}
     >
       <KeyboardAvoidingView 
@@ -52,50 +53,71 @@ export default function LoginScreen({ navigation }: any) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>MovieFlix</Text>
-              <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+            
+            {/* Logo Section */}
+            <View style={styles.logoSection}>
+              <View style={styles.logoContainer}>
+                <Ionicons name="film" size={48} color={COLORS.primary} />
+                <Text style={styles.logoText}>MovieFlix</Text>
+              </View>
+              <Text style={styles.welcomeText}>Chào mừng trở lại</Text>
+              <Text style={styles.subtitle}>Đăng nhập để tiếp tục trải nghiệm</Text>
             </View>
 
-            {/* Form */}
-            <View style={styles.form}>
-              <Input
-                placeholder="Email"
-                placeholderTextColor={COLORS.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                inputStyle={styles.input}
-                containerStyle={styles.inputContainer}
-                leftIcon={
-                  <Ionicons name="mail-outline" size={20} color={COLORS.textMuted} />
-                }
-              />
-              
-              <Input
-                placeholder="Mật khẩu"
-                placeholderTextColor={COLORS.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                inputStyle={styles.input}
-                containerStyle={styles.inputContainer}
-                leftIcon={
-                  <Ionicons name="lock-closed-outline" size={20} color={COLORS.textMuted} />
-                }
-              />
+            {/* Form Section */}
+            <View style={styles.formSection}>
+            <Input
+  label="Email"
+  placeholder="Nhập email của bạn"
+  value={email}
+  onChangeText={setEmail}
+  autoCapitalize="none"
+  keyboardType="email-address"
+  leftIcon={<Ionicons name="mail-outline" size={20} color={COLORS.textMuted} />}
+/>
+
+<Input
+  label="Mật khẩu"
+  placeholder="Nhập mật khẩu"
+  value={password}
+  onChangeText={setPassword}
+  secureTextEntry
+  leftIcon={<Ionicons name="lock-closed-outline" size={20} color={COLORS.textMuted} />}
+/>
               
               <Button
                 title="Đăng nhập"
                 onPress={handleLogin}
                 loading={isLoading}
                 disabled={isLoading}
-                buttonStyle={styles.button}
-                titleStyle={styles.buttonText}
-                containerStyle={styles.buttonContainer}
+                size="large"
+                style={styles.loginButton}
               />
+
+              {/* Forgot Password */}
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>hoặc</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Social Login */}
+            <View style={styles.socialSection}>
+              <TouchableOpacity style={styles.socialButton}>
+                <Ionicons name="logo-google" size={20} color={COLORS.text} />
+                <Text style={styles.socialButtonText}>Tiếp tục với Google</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.socialButton}>
+                <Ionicons name="logo-facebook" size={20} color={COLORS.text} />
+                <Text style={styles.socialButtonText}>Tiếp tục với Facebook</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Footer */}
@@ -123,57 +145,85 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
+    padding: SIZES.padding,
     justifyContent: 'center',
-    padding: 24,
   },
-  header: {
+  logoSection: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: SIZES.padding * 2,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SIZES.base,
+  },
+  logoText: {
+    ...FONTS.h1,
     color: COLORS.text,
-    marginBottom: 8,
+    marginLeft: SIZES.base,
+  },
+  welcomeText: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SIZES.base,
   },
   subtitle: {
-    fontSize: 16,
+    ...FONTS.body2,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-  form: {
-    marginBottom: 32,
+  formSection: {
+    marginBottom: SIZES.padding,
   },
-  inputContainer: {
-    marginBottom: 20,
+  loginButton: {
+    marginTop: SIZES.base,
   },
-  input: {
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: SIZES.base,
+  },
+  forgotPasswordText: {
+    ...FONTS.body3,
+    color: COLORS.primary,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: SIZES.padding,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.textMuted,
+    opacity: 0.3,
+  },
+  dividerText: {
+    ...FONTS.body3,
+    color: COLORS.textMuted,
+    marginHorizontal: SIZES.base,
+  },
+  socialSection: {
+    marginBottom: SIZES.padding,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.secondaryLight,
+    padding: SIZES.padding,
+    borderRadius: SIZES.radius,
+    marginBottom: SIZES.base,
+    borderWidth: 1,
+    borderColor: COLORS.textMuted,
+  },
+  socialButtonText: {
+    ...FONTS.body2,
     color: COLORS.text,
-    fontSize: 16,
-    paddingHorizontal: 12,
-  },
-  buttonContainer: {
-    marginTop: 16,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    height: 56,
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginLeft: SIZES.base,
   },
   footer: {
     flexDirection: 'row',
@@ -181,12 +231,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
+    ...FONTS.body2,
     color: COLORS.textSecondary,
-    fontSize: 16,
   },
   registerLink: {
-    color: COLORS.accent,
-    fontSize: 16,
-    fontWeight: 'bold',
+    ...FONTS.body2,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });

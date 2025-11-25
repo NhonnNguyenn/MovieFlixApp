@@ -1,17 +1,17 @@
-// src/components/movie/MovieCard.tsx
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image 
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+// src/components/movie/MovieCard.tsx - CẬP NHẬT
 import { Ionicons } from '@expo/vector-icons';
-import { Movie } from '../../types';
-import { COLORS } from '../../constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState } from 'react';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { COLORS, FONTS, SHADOWS, SIZES } from '../../constants';
 import movieService from '../../services/movieService';
+import { Movie } from '../../types';
 
 interface MovieCardProps {
   movie: Movie;
@@ -32,9 +32,9 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
 
   const getTitleSize = () => {
     switch (size) {
-      case 'small': return 12;
-      case 'large': return 14;
-      default: return 13;
+      case 'small': return FONTS.body4.fontSize;
+      case 'large': return FONTS.body2.fontSize;
+      default: return FONTS.body3.fontSize;
     }
   };
 
@@ -45,24 +45,23 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
   };
 
   const getYear = () => {
-    if (!movie.releaseDate) return 'N/A';
+    if (!movie.release_date) return 'N/A';
     try {
-      return new Date(movie.releaseDate).getFullYear().toString();
+      return new Date(movie.release_date).getFullYear().toString();
     } catch {
       return 'N/A';
     }
   };
 
   const getRating = () => {
-    return movie.voteAverage ? movie.voteAverage.toFixed(1) : 'N/A';
+    return movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
   };
 
   const getImageSource = () => {
-    if (imageError || !movie.posterPath) {
-      // Sử dụng placeholder image từ URL
+    if (imageError || !movie.poster_path) {
       return { uri: 'https://via.placeholder.com/500x750/1C1C1C/FFFFFF?text=No+Image' };
     }
-    return { uri: movieService.getImageUrl(movie.posterPath) };
+    return { uri: movieService.getImageUrl(movie.poster_path) };
   };
 
   const handleImageError = () => {
@@ -73,7 +72,7 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
     <TouchableOpacity 
       style={[styles.container, getCardSize()]} 
       onPress={handlePress}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       <Image
         source={getImageSource()}
@@ -83,7 +82,7 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
       />
       
       {/* Rating Badge */}
-      {movie.voteAverage && movie.voteAverage > 0 && (
+      {movie.vote_average && movie.vote_average > 0 && (
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={12} color={COLORS.accent} />
           <Text style={styles.rating}>{getRating()}</Text>
@@ -92,8 +91,10 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
 
       {/* Gradient Overlay */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={['transparent', COLORS.overlayDark]}
         style={styles.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
       >
         <Text 
           style={[styles.title, { fontSize: getTitleSize() }]} 
@@ -106,60 +107,65 @@ export default function MovieCard({ movie, onPress, size = 'medium' }: MovieCard
           {getYear()}
         </Text>
       </LinearGradient>
+
+      {/* Hover Effect */}
+      <View style={styles.hoverOverlay} />
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
+    borderRadius: SIZES.radius,
     overflow: 'hidden',
     marginHorizontal: 4,
     backgroundColor: COLORS.card,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...SHADOWS.medium,
   },
   poster: {
-    borderRadius: 12,
+    borderRadius: SIZES.radius,
   },
   gradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 8,
-    paddingTop: 20,
+    padding: SIZES.base,
+    paddingTop: SIZES.padding,
   },
   title: {
     color: COLORS.text,
     fontWeight: 'bold',
     marginBottom: 2,
+    textShadowColor: COLORS.overlayDark,
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   year: {
     color: COLORS.textSecondary,
-    fontSize: 11,
+    fontSize: FONTS.body4.fontSize,
   },
   ratingContainer: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: SIZES.base,
+    right: SIZES.base,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.overlay,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
+    ...SHADOWS.light,
   },
   rating: {
     color: COLORS.text,
-    fontSize: 10,
+    fontSize: FONTS.body4.fontSize,
     fontWeight: 'bold',
     marginLeft: 2,
+  },
+  hoverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.primary,
+    opacity: 0,
   },
 });

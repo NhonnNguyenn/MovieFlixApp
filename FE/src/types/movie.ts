@@ -8,7 +8,6 @@ export interface Movie {
   release_date: string;
   vote_average: number;
   vote_count: number;
-  // Thêm các properties mới
   genres?: Genre[];
   runtime?: number;
   tagline?: string;
@@ -30,9 +29,21 @@ export interface Cast {
   profile_path: string | null;
 }
 
+export interface Video {
+  id: string;
+  key: string;
+  name: string;
+  type: string;
+  site: string;
+  size: number;
+  official: boolean;
+  published_at: string;
+}
+
 export interface MovieDetails {
   movie: Movie;
   credits: {
     cast: Cast[];
   };
+  videos: Video[];
 }

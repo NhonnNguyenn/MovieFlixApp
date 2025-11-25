@@ -16,9 +16,15 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// CORS middleware - cho phép Expo kết nối
+// CORS middleware - THÊM IP 192.168.1.70
 app.use(cors({
-  origin: ['http://localhost:8081', 'exp://localhost:19000', 'http://192.168.1.*:8081'],
+  origin: [
+    'http://localhost:8081', 
+    'exp://localhost:19000',
+    'http://192.168.1.70:8081',    // 👈 THÊM IP CỦA BẠN
+    'http://192.168.1.70:19000',   // 👈 THÊM IP CỦA BẠN
+    'exp://192.168.1.70:19000'     // 👈 THÊM CHO EXPO
+  ],
   credentials: true
 }));
 
