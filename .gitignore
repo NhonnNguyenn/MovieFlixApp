@@ -1,1 +1,12 @@
+# React Native
+
 node_modules/
+.expo/
+android/
+ios/
+*.log
+*.tmp
+dist/
+build/
+temp/
+.DS_Store
